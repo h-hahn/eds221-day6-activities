@@ -1,0 +1,95 @@
+---
+title: "lobster_exploration"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(lterdatasampler)
+
+```
+
+## lobster activities 
+
+## part 2:
+
+```{r}
+# read in data to lobster_abundance, the na values are -99999
+lobster_abundance <- read_csv(here("data","Lobster_Abundance_All_Years_20210412.csv"), na = c("-99999","")) %>% 
+  # clean names to lower snake case
+  clean_names() %>% 
+  # make each in count have its own observation
+  uncount(count)
+
+```
+
+```{r}
+lobster_summarize <- lobster_abundance %>% 
+  group_by(year, site) %>% 
+  summarise(mean = mean(size_mm), count=n())
+```
+
+```{r}
+ggplot(lobster_summarize, aes(year, count)) +
+  geom_point() +
+  facet_wrap(vars(site))
+
+```
+
+```{r}
+lobster_2020 <- lobster_abundance %>% 
+  filter(year == 2020) %>% 
+  mutate(legal = case_when(size_mm >= 79.76 ~ "yes", size_mm < 79.76 ~ "no")) %>% group_by(site, legal) %>% 
+  summarize(count_legal = n()) 
+```
+
+```{r}
+ggplot(lobster_2020, aes(site, count_legal, fill = legal)) +
+  geom_col(position = "fill")
+```
+
+## part 3:
+
+```{r}
+filter_a <- lobster_abundance %>% 
+  filter(site %in% c("IVEE", "CARP", "NAPL"))
+
+filter_b <- lobster_abundance %>% 
+  filter(month == 8)
+
+filter_c <- lobster_abundance %>% 
+  filter(site == "AQUE" | size_mm > 70)
+```
+
+```{r}
+mean_sd <- lobster_abundance %>% 
+  group_by(site) %>%
+  summarize(mean_size = mean(size_mm, na.rm = TRUE),
+            sd_size = sd(size_mm, na.rm = TRUE))
+
+max_size <- lobster_abundance %>% 
+  group_by(site, month) %>% 
+  summarize(max_size = max(size_mm, na.rm = TRUE))
+```
+
+```{r}
+lobster_cm <- lobster_abundance %>% 
+  mutate(size_cm = size_mm/10)
+
+site_lower <- lobster_abundance %>% 
+  mutate(site = tolower(site))
+
+area_chr <- lobster_abundance %>% 
+  mutate(area = as.character(area))
+```
+
+```{r}
+small_large <- lobster_abundance %>% 
+  mutate(size_bin = case_when(size_mm <= 70 ~ "small", size_mm > 70 ~ "large"))
+
+finally_done <- lobster_abundance %>% 
+  mutate(designation = case_when(site %in% c("IVEE", "NAPL") ~ "MPA", TRUE ~ "not MPA"))
+```
